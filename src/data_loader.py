@@ -143,3 +143,24 @@ def aggregate_monthly(df: pd.DataFrame) -> pd.DataFrame:
     summary['Max_Usage_kWh'] = summary['Max_Usage_kWh'].round(2)
     
     return summary
+
+if __name__ == '__main__':
+    # 간단한 작동 테스트
+    test_file = 'electricity_usage_test.csv'
+    try:
+        print("1. 샘플 데이터 생성 중...")
+        generate_sample_data(test_file, days=30)
+        
+        print("2. 데이터 로딩 중...")
+        df = load_data(test_file)
+        print(df.head())
+        
+        print("\n3. 월별 집계 중...")
+        monthly_summary = aggregate_monthly(df)
+        print(monthly_summary)
+        
+    finally:
+        # 테스트 파일 삭제
+        if os.path.exists(test_file):
+            os.remove(test_file)
+            print("\n테스트 완료 후 임시 파일을 삭제했습니다.")
