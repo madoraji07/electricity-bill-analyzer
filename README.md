@@ -46,6 +46,3 @@
 **2. 데이터 로더 모듈 단독 실행** python src/data_loader.py
 
 * 실행 시 임시 파일(`electricity_usage_test.csv`)을 생성하여 **[데이터 생성 -> 로딩 -> 월별 집계]** 과정을 콘솔에 출력한 후, **임시 파일을 안전하게 자동 삭제**합니다.
-python src/data_loader.py
-
-실행 시 임시 파일(electricity_usage_test.csv)을 생성하여 [데이터 생성 -> 로딩 -> 월별 집계] 과정을 콘솔에 출력한 후, 임시 파일을 안전하게 자동 삭제합니다.
