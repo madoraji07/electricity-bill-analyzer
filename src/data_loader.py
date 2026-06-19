@@ -144,6 +144,25 @@ def aggregate_monthly(df: pd.DataFrame) -> pd.DataFrame:
     
     return summary
 
+    def aggregate_weekly(df: pd.DataFrame) -> pd.DataFrame:
+        """
+    기획서의 요구사항에 따라 전력 사용량 데이터를 요일별 및 타입별로 집계합니다.
+    """
+    temp_df = df.copy()
+    
+    # 날짜 데이터에서 요일 이름을 추출 (Monday, Tuesday 등)
+    temp_df['Day'] = temp_df['Date'].dt.day_name()
+    
+    # 타입별, 요일별로 그룹화하여 일평균 사용량 집계
+    weekly = temp_df.groupby(['Type', 'Day'])['Usage_kWh'].mean().reset_index()
+    
+    # 차트 시각화 시 요일이 월요일부터 일요일 순서로 예쁘게 정렬되도록 순서 강제 정의
+    day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekly['Day'] = pd.Categorical(weekly['Day'], categories=day_order, ordered=True)
+    
+    # 요일 순서대로 정렬 후 소수점 둘째 자리까지 반올림하여 반환
+    return weekly.sort_values('Day').reset_index(drop=True).round(2)
+
 if __name__ == '__main__':
     # 간단한 작동 테스트
     test_file = 'electricity_usage_test.csv'
