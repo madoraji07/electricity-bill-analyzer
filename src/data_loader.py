@@ -77,3 +77,37 @@ def generate_sample_data(file_path: str, start_date: str = '2025-01-01', days: i
     df.to_csv(file_path, index=False, encoding='utf-8-sig')
     print(f"[Success] 샘플 데이터가 성공적으로 생성되었습니다: {file_path}")
     return file_path
+
+def load_data(file_path: str) -> pd.DataFrame:
+    """
+    CSV 데이터 파일을 로딩하여 pandas DataFrame으로 반환합니다.
+    
+    Args:
+        file_path (str): 읽어올 CSV 파일 경로
+        
+    Returns:
+        pd.DataFrame: 전처리된 데이터프레임
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
+        
+    try:
+        # utf-8-sig로 읽어서 한글 깨짐 방지 및 BOM 제거
+        df = pd.read_csv(file_path, encoding='utf-8-sig')
+    except Exception as e:
+        # 혹시 다른 인코딩인 경우 대응
+        try:
+            df = pd.read_csv(file_path, encoding='cp949')
+        except Exception:
+            raise ValueError(f"CSV 파일을 읽는 중 오류가 발생했습니다: {str(e)}")
+            
+    # 필수 컬럼 체크
+    required_cols = {'Date', 'Type', 'Usage_kWh'}
+    if not required_cols.issubset(df.columns):
+        raise ValueError(f"CSV 파일에 필수 컬럼이 누락되었습니다. 필요 컬럼: {required_cols}")
+        
+    # 날짜 데이터 처리 및 정렬
+    df['Date'] = pd.to_datetime(df['Date'])
+    df = df.sort_values(by=['Type', 'Date']).reset_index(drop=True)
+    
+    return df
