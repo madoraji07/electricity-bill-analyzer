@@ -43,7 +43,10 @@
 
 ## 🎬 구동 시연 영상 (GIF)
 
-<img src="src/demo.gif" width="600" alt="Streamlit 대시보드 구동 시연">
+<video width="800" controls>
+  <source src="src/demo.mp4" type="video/mp4">
+  사용하시는 브라우저가 영상을 지원하지 않습니다.
+</video>
 
 > 💡 **시연 가이드:** 왼쪽 사이드바의 입력창 수치를 조작함에 따라 당월 예상 청구 금액과 AI 절약 가이드 메시지가 동적으로 실시간 업데이트되며, 하단의 연간 누적 통계 지표와 월별 시각화 차트가 유기적으로 연동됩니다.
 
