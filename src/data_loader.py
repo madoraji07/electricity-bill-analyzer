@@ -111,3 +111,35 @@ def load_data(file_path: str) -> pd.DataFrame:
     df = df.sort_values(by=['Type', 'Date']).reset_index(drop=True)
     
     return df
+
+def aggregate_monthly(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    로드된 전력 사용량 데이터를 월별 및 타입별(가정용/사업장용)로 집계합니다.
+    
+    Args:
+        df (pd.DataFrame): load_data 함수를 통해 로딩된 DataFrame
+        
+    Returns:
+        pd.DataFrame: 월별 집계 결과 DataFrame (연도, 월, 구분, 총사용량, 일평균사용량, 최대사용량)
+    """
+    # 원본 보존을 위해 카피
+    temp_df = df.copy()
+    
+    # 연도와 월 추출
+    temp_df['Year'] = temp_df['Date'].dt.year
+    temp_df['Month'] = temp_df['Date'].dt.month
+    
+    # 월별, 타입별 집계
+    summary = temp_df.groupby(['Year', 'Month', 'Type']).agg(
+        Total_Usage_kWh=('Usage_kWh', 'sum'),
+        Daily_Average_kWh=('Usage_kWh', 'mean'),
+        Max_Usage_kWh=('Usage_kWh', 'max'),
+        Days_Count=('Usage_kWh', 'count')
+    ).reset_index()
+    
+    # 소수점 둘째 자리까지 반올림
+    summary['Total_Usage_kWh'] = summary['Total_Usage_kWh'].round(2)
+    summary['Daily_Average_kWh'] = summary['Daily_Average_kWh'].round(2)
+    summary['Max_Usage_kWh'] = summary['Max_Usage_kWh'].round(2)
+    
+    return summary
