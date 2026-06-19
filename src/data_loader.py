@@ -1,59 +1,79 @@
-"""데이터 로딩 모듈"""
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime, timedelta
 
-class ElectricityDataLoader:
-    def __init__(self):
-        self.data = None
+def generate_sample_data(file_path: str, start_date: str = '2025-01-01', days: int = 365) -> str:
+    """
+    가정(Residential) 및 사업장(Commercial)의 전력 사용량 샘플 CSV 데이터를 생성합니다.
+    계절별 사용량 패턴(여름/겨울 냉난방 증가)과 주중/주말 패턴을 반영합니다.
     
-    def generate_sample_data(self, days=365):
-        """샘플 데이터 생성"""
-        print(f"📊 {days}일치 샘플 데이터 생성 중...")
+    Args:
+        file_path (str): 저장할 CSV 파일 경로
+        start_date (str): 시작 날짜 (YYYY-MM-DD)
+        days (int): 생성할 날짜 수
         
-        start_date = datetime.now() - timedelta(days=days)
-        dates = [start_date + timedelta(days=i) for i in range(days)]
+    Returns:
+        str: 생성된 파일 경로
+    """
+    start = datetime.strptime(start_date, '%Y-%m-%d')
+    date_list = [start + timedelta(days=x) for x in range(days)]
+    
+    data = []
+    
+    # 난수 고정을 위해 시드 설정
+    np.random.seed(42)
+    
+    for dt in date_list:
+        month = dt.month
+        day_of_week = dt.weekday()  # 0: 월요일, 6: 일요일
+        is_weekend = day_of_week >= 5
         
-        np.random.seed(42)
-        base_usage = 10
-        
-        data = []
-        for date in dates:
-            month = date.month
-            seasonal_factor = 1.5 if month in [6, 7, 8, 12, 1, 2] else 1.0
-            weekday_factor = 1.2 if date.weekday() >= 5 else 1.0
+        # 계절별 가중치 설정 (여름 7~8월, 겨울 12~2월에 사용량 증가)
+        if month in [7, 8]:
+            season_mult = 1.5
+        elif month in [12, 1, 2]:
+            season_mult = 1.3
+        else:
+            season_mult = 1.0
             
-            daily_usage = base_usage * seasonal_factor * weekday_factor
-            daily_usage += np.random.normal(0, 2)
-            daily_usage = max(0, daily_usage)
-            
-            data.append({
-                'date': date.strftime('%Y-%m-%d'),
-                'usage_kwh': round(daily_usage, 2),
-                'month': date.month,
-                'year': date.year,
-                'weekday': date.strftime('%A')
-            })
+        # 1. 가정용 (Residential) 사용량 생성
+        # 기본 사용량: 8 ~ 15 kWh/일 (누진세 구간을 고려해 월 200~400kWh 수준 타겟)
+        base_res = 10.0
+        # 주말에는 집에 머무는 시간이 많아 사용량 증가
+        weekend_mult_res = 1.2 if is_weekend else 1.0
+        # 랜덤 변동성 추가 (정규분포)
+        noise_res = np.random.normal(0, 1.5)
+        usage_res = round(max(3.0, (base_res * season_mult * weekend_mult_res) + noise_res), 2)
         
-        self.data = pd.DataFrame(data)
-        print(f"✅ 데이터 생성 완료! (총 {len(self.data)}개)")
-        return self.data
+        data.append({
+            'Date': dt.strftime('%Y-%m-%d'),
+            'Type': 'Residential',
+            'Usage_kWh': usage_res
+        })
+        
+        # 2. 사업장용 (Commercial) 사용량 생성
+        # 기본 사용량: 30 ~ 60 kWh/일
+        base_com = 45.0
+        # 주말에는 휴무 또는 단축 영업으로 사용량 감소
+        weekend_mult_com = 0.4 if is_weekend else 1.0
+        # 랜덤 변동성 추가
+        noise_com = np.random.normal(0, 5.0)
+        usage_com = round(max(10.0, (base_com * season_mult * weekend_mult_com) + noise_com), 2)
+        
+        data.append({
+            'Date': dt.strftime('%Y-%m-%d'),
+            'Type': 'Commercial',
+            'Usage_kWh': usage_com
+        })
+        
+    df = pd.DataFrame(data)
     
-    def get_monthly_summary(self):
-        """월별 요약"""
-        if self.data is None:
-            return None
+    # 디렉토리가 없으면 생성
+    dir_name = os.path.dirname(file_path)
+    if dir_name and not os.path.exists(dir_name):
+        os.makedirs(dir_name)
         
-        monthly = self.data.groupby(['year', 'month']).agg({
-            'usage_kwh': ['sum', 'mean', 'max', 'min']
-        }).round(2)
-        
-        monthly.columns = ['총사용량', '평균', '최대', '최소']
-        return monthly
-    
-    def validate_data(self):
-        """데이터 검증"""
-        if self.data is None:
-            return False
-        print("✅ 데이터 검증 완료")
-        return True
+    df.to_csv(file_path, index=False, encoding='utf-8-sig')
+    print(f"[Success] 샘플 데이터가 성공적으로 생성되었습니다: {file_path}")
+    return file_path
